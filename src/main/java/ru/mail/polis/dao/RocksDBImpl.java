@@ -41,7 +41,7 @@ public final class RocksDBImpl implements DAO {
     @Override
     public Iterator<Record> iterator(@NotNull final ByteBuffer from) throws IOException {
         final var iterator = db.newIterator();
-        iterator.seek(Converter.toArrayShifted(from));
+        iterator.seek(fromByteBufferToByteArray(from));
         return new RecordIterator(iterator);
     }
 
@@ -49,7 +49,7 @@ public final class RocksDBImpl implements DAO {
     @Override
     public ByteBuffer get(@NotNull final ByteBuffer key) throws IOException, NoSuchElementException {
         try {
-            final var res = db.get(Converter.toArrayShifted(key));
+            final var res = db.get(fromByteBufferToByteArray(key));
             if (res == null) {
                 throw new NoSuchElementException();
             }
@@ -62,7 +62,7 @@ public final class RocksDBImpl implements DAO {
     @Override
     public void upsert(@NotNull final ByteBuffer key, @NotNull final ByteBuffer value) throws IOException {
        try {
-           db.put(Converter.toArrayShifted(key), Converter.fromByteBufferToByteArray(value));
+           db.put(fromByteBufferToByteArray(key), fromByteBufferToByteArray(value));
        } catch (RocksDBException e) {
            throw new RuntimeException(e);
        }
@@ -71,7 +71,7 @@ public final class RocksDBImpl implements DAO {
     @Override
     public void remove(@NotNull final ByteBuffer key) throws IOException {
         try {
-            db.delete(Converter.toArrayShifted(key));
+            db.delete(fromByteBufferToByteArray(key));
         } catch (RocksDBException e) {
             throw new RuntimeException(e);
         }
@@ -89,5 +89,16 @@ public final class RocksDBImpl implements DAO {
     @Override
     public void close() throws IOException {
         db.close();
+    }
+
+    /** Convert from ByteBuffer to Byte massive.
+     *
+     * @param buffer - ByteBuffer variable to convert
+     */
+    public static byte[] fromByteBufferToByteArray(@NotNull final ByteBuffer buffer) {
+        final ByteBuffer bufferCopy = buffer.duplicate();
+        final byte[] array = new byte[bufferCopy.remaining()];
+        bufferCopy.get(array);
+        return array;
     }
 }
